@@ -24,10 +24,40 @@
       max-width: 420px;
       width: 100%;
     }
-    h2 { color: #1a1033; font-size: 22px; margin-bottom: 8px; }
+    h2 { color: #1a1033; font-size: 22px; margin-bottom: 6px; }
     .amount { color: #6c47ff; font-size: 32px; font-weight: 700; margin-bottom: 24px; }
-    #payment-element { margin-bottom: 24px; }
-    button {
+    #payment-element { margin-bottom: 16px; }
+    .save-card-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 12px 14px;
+      background: #f5f3ff;
+      border-radius: 10px;
+      border: 1px solid #e5e0ff;
+      cursor: pointer;
+    }
+    .save-card-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #6c47ff;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .save-card-row label {
+      font-size: 14px;
+      color: #374151;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+    .save-card-row label span {
+      display: block;
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    button#submit-btn {
       background: #6c47ff;
       color: white;
       border: none;
@@ -39,111 +69,94 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    button:hover { background: #4b2fcc; }
-    button:disabled { background: #a094d8; cursor: not-allowed; }
+    button#submit-btn:hover { background: #4b2fcc; }
+    button#submit-btn:disabled { background: #a094d8; cursor: not-allowed; }
     #error-message {
       color: #dc2626;
       font-size: 14px;
       margin-top: 12px;
-      padding: 10px;
+      padding: 10px 14px;
       background: #fef2f2;
       border-radius: 8px;
       display: none;
+      border-left: 3px solid #dc2626;
     }
     #success-message {
       color: #059669;
       font-size: 15px;
       margin-top: 12px;
-      padding: 12px;
+      padding: 14px;
       background: #ecfdf5;
       border-radius: 8px;
       text-align: center;
       display: none;
+      border-left: 3px solid #059669;
     }
-    .lock-icon { font-size: 12px; color: #6b7280; text-align: center; margin-top: 16px; }
-    #loading {
-      text-align: center;
-      padding: 40px 0;
-      color: #6b7280;
-      font-size: 14px;
+    .lock-icon { font-size: 12px; color: #9ca3af; text-align: center; margin-top: 16px; }
+    #loading { text-align: center; padding: 40px 0; color: #6b7280; font-size: 14px; }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #e5e0ff;
+      border-top-color: #6c47ff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
     }
+    @keyframes spin { to { transform: rotate(360deg); } }
     #form-container { display: none; }
-
-    /* Estilo para el debug temporal */
-    #debug-info {
-      background: #f0f0f0;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 12px;
-      margin: 15px 0;
-      font-size: 13px;
-      color: #333;
-      display: none;
-    }
   </style>
 </head>
 <body>
   <div class="card">
     <h2>Pago Seguro &#128274;</h2>
     <div class="amount" id="amount-display">$0.00</div>
-    
-    <!-- Debug temporal: muestra el valor raw que recibe -->
-    <div id="debug-info">
-      <strong>Debug - Valor recibido:</strong><br>
-      amount = <span id="debug-amount">---</span><br>
-      currency = <span id="debug-currency">---</span>
+
+    <div id="loading">
+      <span class="spinner"></span> Cargando formulario de pago...
     </div>
 
-    <div id="loading">Cargando formulario de pago...</div>
     <div id="form-container">
       <div id="payment-element"></div>
+
+      <div class="save-card-row" onclick="document.getElementById('save-card').click()">
+        <input type="checkbox" id="save-card">
+        <label for="save-card" onclick="event.stopPropagation()">
+          Guardar tarjeta para futuras compras
+          <span>Podras pagar con 1 clic la proxima vez</span>
+        </label>
+      </div>
+
       <button id="submit-btn">Pagar ahora</button>
       <div id="error-message"></div>
-      <div id="success-message">&#9989; ¡Pago exitoso! Gracias por tu compra.</div>
-      <p class="lock-icon">&#128274; Pago procesado con Stripe. Tus datos están seguros.</p>
+      <div id="success-message">&#9989; &#161;Pago exitoso! Gracias por tu compra.</div>
+      <p class="lock-icon">&#128274; Pago procesado con Stripe. Tus datos estan seguros.</p>
     </div>
   </div>
 
   <script>
-    const STRIPE_PK = 'pk_live_51TbQSg2zJSGcKrfMkYWHZNKhCR2vpMwrbypviwNAQa8WTgYv2xCuHNIahrmzl7rTOTANM2suHyNkLfaEpV3huSa100iF5GGMkr';
+    const STRIPE_PK = 'pk_test_51LLPZSAyqyVgaUlbXbj2SLEI5GSm4ja4tiz7mJB2gUokpRMQOJx2BeUqpTYp5xE5uwXd3PEjDcwjFi0NwME9hRgE005Ajk8wNW';
     const stripe = Stripe(STRIPE_PK);
 
-    // Leer parámetros de la URL
-    const params = new URLSearchParams(window.location.search);
+    const params       = new URLSearchParams(window.location.search);
     const clientSecret = params.get('client_secret');
-    const amountParam = params.get('amount');
-    const currency = (params.get('currency') || 'usd').toUpperCase();
+    const amount       = params.get('amount');
 
-   
-
-    // Mostrar monto formateado correctamente
-    if (amountParam) {
-      const amountCents = parseInt(amountParam, 10);
-      
-      if (!isNaN(amountCents) && amountCents > 0) {
-        const amountDollars = amountCents / 100;
-        
-        document.getElementById('amount-display').textContent = 
-          new Intl.NumberFormat('es-ES', {
-            style: 'currency',
-            currency: currency,
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          }).format(amountDollars);
-      } else {
-        document.getElementById('amount-display').textContent = '$0.00';
-      }
+    if (amount) {
+      document.getElementById('amount-display').textContent =
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+          .format(parseInt(amount) / 100);
     }
 
-    // Verificar que llegó el clientSecret
     if (!clientSecret) {
-      document.getElementById('loading').textContent =
-        'Error: no se recibió el client_secret. Vuelve a intentarlo.';
+      document.getElementById('loading').innerHTML =
+        '&#9888; Error: no se recibio el client_secret. Vuelve a intentarlo.';
     } else {
-      // Inicializar Stripe Elements
       const elements = stripe.elements({ clientSecret });
       const paymentElement = elements.create('payment');
-      
+
       paymentElement.on('ready', () => {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('form-container').style.display = 'block';
@@ -151,16 +164,16 @@
 
       paymentElement.mount('#payment-element');
 
-      // Manejar envío del formulario
       document.getElementById('submit-btn').addEventListener('click', async () => {
-        const btn = document.getElementById('submit-btn');
-        const errDiv = document.getElementById('error-message');
+        const btn      = document.getElementById('submit-btn');
+        const errDiv   = document.getElementById('error-message');
+        const saveCard = document.getElementById('save-card').checked;
 
         btn.disabled = true;
-        btn.textContent = 'Procesando...';
+        btn.innerHTML = '<span class="spinner"></span> Procesando...';
         errDiv.style.display = 'none';
 
-        const { error } = await stripe.confirmPayment({
+        const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
           confirmParams: { return_url: window.location.href },
           redirect: 'if_required'
@@ -172,14 +185,20 @@
           btn.disabled = false;
           btn.textContent = 'Pagar ahora';
         } else {
-          // Pago exitoso
           document.getElementById('success-message').style.display = 'block';
           btn.style.display = 'none';
 
-          window.parent.postMessage({ type: 'PAYMENT_SUCCESS', clientSecret }, '*');
-          
+          const msg = {
+            type: 'PAYMENT_SUCCESS',
+            clientSecret,
+            paymentIntentId: paymentIntent?.id ?? null,
+            saveCard
+          };
+
+          window.parent.postMessage(msg, '*');
+
           if (window.flutter_inappwebview) {
-            window.flutter_inappwebview.callHandler('paymentSuccess', { clientSecret });
+            window.flutter_inappwebview.callHandler('paymentSuccess', msg);
           }
         }
       });
