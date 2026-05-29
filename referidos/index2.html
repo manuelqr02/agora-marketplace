@@ -68,34 +68,10 @@
       border: 2px dashed rgba(255, 255, 255, 0.6);
       border-radius: 16px;
       padding: 20px;
-      margin: 30px 0 15px 0;
+      margin: 30px 0;
       font-size: 28px;
       font-weight: 700;
       letter-spacing: 4px;
-    }
-
-    .copy-btn {
-      background: rgba(255, 255, 255, 0.25);
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 50px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 30px;
-      transition: all 0.2s;
-    }
-
-    .copy-btn:hover {
-      background: rgba(255, 255, 255, 0.4);
-    }
-
-    .copy-btn:active {
-      transform: scale(0.95);
     }
 
     .download-btn {
@@ -108,6 +84,7 @@
       border-radius: 50px;
       width: 100%;
       cursor: pointer;
+      margin-top: 10px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
       transition: transform 0.2s;
     }
@@ -142,11 +119,12 @@
 </head>
 <body>
 
-  
-     <div class="app-icon">
-  <img src="logoapp.png" alt="Logo App" style="width: 100%; height: 100%; object-fit: contain; border-radius: 20px;">
+  <div class="container">
+    <div class="card">
+      <!-- Reemplaza esta sección completa -->
+<div class="app-icon">
+  <img src="logoapp.png" alt="Logo de la App" style="width: 100%; height: 100%; object-fit: contain; border-radius: 20px;">
 </div>
-
       
       <h1>¡Te han referido!</h1>
       <p>Tu código ha sido copiado automáticamente</p>
@@ -154,10 +132,6 @@
       <div class="referral-code" id="referralCode">
         CÓDIGO
       </div>
-
-      <button class="copy-btn" id="copyBtn">
-        📋 Copiar código
-      </button>
 
       <button class="download-btn" id="downloadBtn">
         Descargar la App
@@ -169,36 +143,46 @@
     </div>
   </div>
 
-  <!-- Toast -->
+  <!-- Toast de confirmación -->
   <div class="toast" id="toast">
-    ✅ Copiado
+    ✅ Código copiado al portapapeles
   </div>
 
   <script>
-    // Obtener código de referido
+    // Obtener código de referido desde la URL
     function getReferralCode() {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('ref') || urlParams.get('codigo') || urlParams.get('r') || "SIN-CODIGO";
     }
 
     const code = getReferralCode();
-    document.getElementById('referralCode').textContent = code;
+    const codeElement = document.getElementById('referralCode');
+    codeElement.textContent = code;
 
-    // Función para copiar
+    // Función para copiar al portapapeles
     function copyToClipboard(text) {
       if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(text).then(showToast);
+        navigator.clipboard.writeText(text).then(() => {
+          showToast();
+        }).catch(() => {
+          fallbackCopy(text);
+        });
       } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showToast();
+        fallbackCopy(text);
       }
+    }
+
+    function fallbackCopy(text) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      showToast();
     }
 
     function showToast() {
@@ -212,23 +196,18 @@
       }, 2500);
     }
 
-    // Copiar automáticamente al cargar
+    // Copiar automáticamente al cargar la página
     window.onload = function() {
       if (code !== "SIN-CODIGO") {
         copyToClipboard(code);
       }
     };
 
-    // Botón de copiar manual
-    document.getElementById('copyBtn').addEventListener('click', () => {
-      copyToClipboard(code);
-    });
-
     // Botón de descarga
     document.getElementById('downloadBtn').addEventListener('click', function() {
       const userAgent = navigator.userAgent.toLowerCase();
       
-      // ←←← CAMBIA ESTOS ENLACES POR LOS DE TU APP
+      // Cambia estos enlaces por los de tu app
       const playStoreLink = "https://play.google.com/store/apps/details?id=com.tuapp.example";
       const appStoreLink = "https://apps.apple.com/app/tu-app/id1234567890";
 
