@@ -121,7 +121,13 @@
     <div id="form-container">
       <div id="payment-element"></div>
 
-     
+      <div class="save-card-row" onclick="document.getElementById('save-card').click()">
+        <input type="checkbox" id="save-card">
+        <label for="save-card" onclick="event.stopPropagation()">
+          Guardar tarjeta para futuras compras
+          <span>Podras pagar con 1 clic la proxima vez</span>
+        </label>
+      </div>
 
       <button id="submit-btn">Pagar ahora</button>
       <div id="error-message"></div>
