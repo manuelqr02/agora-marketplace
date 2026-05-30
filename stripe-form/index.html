@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Pago Seguro</title>
   <script src="https://js.stripe.com/v3/"></script>
   <style>
@@ -12,70 +12,47 @@
       background: #f5f3ff;
       min-height: 100vh;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: 20px;
+      padding: 12px;
     }
     .card {
       background: white;
-      border-radius: 16px;
-      padding: 32px;
-      box-shadow: 0 4px 24px rgba(108,71,255,0.12);
-      max-width: 420px;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(108,71,255,0.10);
       width: 100%;
+      max-width: 420px;
     }
-    h2 { color: #1a1033; font-size: 22px; margin-bottom: 6px; }
-    .amount { color: #6c47ff; font-size: 32px; font-weight: 700; margin-bottom: 24px; }
-    #payment-element { margin-bottom: 16px; }
-    .save-card-row {
+    .header {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 20px;
-      padding: 12px 14px;
-      background: #f5f3ff;
-      border-radius: 10px;
-      border: 1px solid #e5e0ff;
-      cursor: pointer;
+      justify-content: space-between;
+      margin-bottom: 16px;
     }
-    .save-card-row input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      accent-color: #6c47ff;
-      cursor: pointer;
-      flex-shrink: 0;
-    }
-    .save-card-row label {
-      font-size: 14px;
-      color: #374151;
-      cursor: pointer;
-      line-height: 1.4;
-    }
-    .save-card-row label span {
-      display: block;
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: 2px;
-    }
+    h2 { color: #1a1033; font-size: 17px; font-weight: 600; }
+    .amount { color: #6c47ff; font-size: 26px; font-weight: 700; }
+    #payment-element { margin-bottom: 14px; }
     button#submit-btn {
       background: #6c47ff;
       color: white;
       border: none;
       border-radius: 10px;
-      padding: 14px;
+      padding: 13px;
       width: 100%;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.2s;
+      margin-top: 4px;
     }
     button#submit-btn:hover { background: #4b2fcc; }
     button#submit-btn:disabled { background: #a094d8; cursor: not-allowed; }
     #error-message {
       color: #dc2626;
-      font-size: 14px;
-      margin-top: 12px;
-      padding: 10px 14px;
+      font-size: 13px;
+      margin-top: 10px;
+      padding: 9px 12px;
       background: #fef2f2;
       border-radius: 8px;
       display: none;
@@ -83,26 +60,24 @@
     }
     #success-message {
       color: #059669;
-      font-size: 15px;
-      margin-top: 12px;
-      padding: 14px;
+      font-size: 14px;
+      margin-top: 10px;
+      padding: 12px;
       background: #ecfdf5;
       border-radius: 8px;
       text-align: center;
       display: none;
-      border-left: 3px solid #059669;
     }
-    .lock-icon { font-size: 12px; color: #9ca3af; text-align: center; margin-top: 16px; }
-    #loading { text-align: center; padding: 40px 0; color: #6b7280; font-size: 14px; }
+    .lock-icon { font-size: 11px; color: #9ca3af; text-align: center; margin-top: 12px; }
+    #loading { text-align: center; padding: 24px 0; color: #6b7280; font-size: 13px; }
     .spinner {
       display: inline-block;
-      width: 20px;
-      height: 20px;
+      width: 16px; height: 16px;
       border: 2px solid #e5e0ff;
       border-top-color: #6c47ff;
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
-      margin-right: 8px;
+      margin-right: 6px;
       vertical-align: middle;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -111,33 +86,26 @@
 </head>
 <body>
   <div class="card">
-    <h2>Pago Seguro &#128274;</h2>
-    <div class="amount" id="amount-display">$0.00</div>
+    <div class="header">
+      <h2>Pago Seguro &#128274;</h2>
+      <div class="amount" id="amount-display">$0.00</div>
+    </div>
 
     <div id="loading">
-      <span class="spinner"></span> Cargando formulario de pago...
+      <span class="spinner"></span> Cargando...
     </div>
 
     <div id="form-container">
       <div id="payment-element"></div>
-
-      <div class="save-card-row" onclick="document.getElementById('save-card').click()">
-        <input type="checkbox" id="save-card">
-        <label for="save-card" onclick="event.stopPropagation()">
-          Guardar tarjeta para futuras compras
-          <span>Podras pagar con 1 clic la proxima vez</span>
-        </label>
-      </div>
-
       <button id="submit-btn">Pagar ahora</button>
       <div id="error-message"></div>
       <div id="success-message">&#9989; &#161;Pago exitoso! Gracias por tu compra.</div>
-      <p class="lock-icon">&#128274; Pago procesado con Stripe. Tus datos estan seguros.</p>
+      <p class="lock-icon">&#128274; Procesado con Stripe. Tus datos estan seguros.</p>
     </div>
   </div>
 
   <script>
-    const STRIPE_PK = 'pk_live_51TbQSg2zJSGcKrfMkYWHZNKhCR2vpMwrbypviwNAQa8WTgYv2xCuHNIahrmzl7rTOTANM2suHyNkLfaEpV3huSa100iF5GGMkr';
+    const STRIPE_PK = 'pk_test_51LLPZSAyqyVgaUlbXbj2SLEI5GSm4ja4tiz7mJB2gUokpRMQOJx2BeUqpTYp5xE5uwXd3PEjDcwjFi0NwME9hRgE005Ajk8wNW';
     const stripe = Stripe(STRIPE_PK);
 
     const params       = new URLSearchParams(window.location.search);
@@ -165,9 +133,8 @@
       paymentElement.mount('#payment-element');
 
       document.getElementById('submit-btn').addEventListener('click', async () => {
-        const btn      = document.getElementById('submit-btn');
-        const errDiv   = document.getElementById('error-message');
-        const saveCard = document.getElementById('save-card').checked;
+        const btn    = document.getElementById('submit-btn');
+        const errDiv = document.getElementById('error-message');
 
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner"></span> Procesando...';
@@ -192,7 +159,7 @@
             type: 'PAYMENT_SUCCESS',
             clientSecret,
             paymentIntentId: paymentIntent?.id ?? null,
-            saveCard
+            saveCard: true
           };
 
           window.parent.postMessage(msg, '*');
