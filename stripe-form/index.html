@@ -32,6 +32,19 @@
     }
     h2 { color: #1a1033; font-size: 17px; font-weight: 600; }
     .amount { color: #6c47ff; font-size: 26px; font-weight: 700; }
+    .currency-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #6c47ff;
+      background: #f0ebff;
+      border-radius: 6px;
+      padding: 2px 7px;
+      margin-left: 6px;
+      vertical-align: middle;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
     #payment-element { margin-bottom: 14px; }
     button#submit-btn {
       background: #6c47ff;
@@ -88,7 +101,10 @@
   <div class="card">
     <div class="header">
       <h2>Pago Seguro &#128274;</h2>
-      <div class="amount" id="amount-display">$0.00</div>
+      <div>
+        <span class="amount" id="amount-display">$0.00</span>
+        <span class="currency-badge" id="currency-badge">usd</span>
+      </div>
     </div>
 
     <div id="loading">
@@ -105,18 +121,23 @@
   </div>
 
   <script>
-    const STRIPE_PK = 'pk_live_51TbQSg2zJSGcKrfMkYWHZNKhCR2vpMwrbypviwNAQa8WTgYv2xCuHNIahrmzl7rTOTANM2suHyNkLfaEpV3huSa100iF5GGMkr';
+    const STRIPE_PK = 'pk_test_51LLPZSAyqyVgaUlbXbj2SLEI5GSm4ja4tiz7mJB2gUokpRMQOJx2BeUqpTYp5xE5uwXd3PEjDcwjFi0NwME9hRgE005Ajk8wNW';
     const stripe = Stripe(STRIPE_PK);
 
     const params       = new URLSearchParams(window.location.search);
     const clientSecret = params.get('client_secret');
     const amount       = params.get('amount');
+    const currency     = (params.get('currency') || 'usd').toLowerCase();
 
+    // Mostrar monto con la moneda correcta
     if (amount) {
       document.getElementById('amount-display').textContent =
-        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' })
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() })
           .format(parseInt(amount) / 100);
     }
+
+    // Mostrar badge de moneda
+    document.getElementById('currency-badge').textContent = currency.toUpperCase();
 
     if (!clientSecret) {
       document.getElementById('loading').innerHTML =
@@ -156,10 +177,12 @@
           btn.style.display = 'none';
 
           const msg = {
-            type: 'PAYMENT_SUCCESS',
+            type:            'PAYMENT_SUCCESS',
             clientSecret,
             paymentIntentId: paymentIntent?.id ?? null,
-            saveCard: true
+            currency:        currency,
+            amount:          amount ? parseInt(amount) : null,
+            saveCard:        true
           };
 
           window.parent.postMessage(msg, '*');
