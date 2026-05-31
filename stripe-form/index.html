@@ -4,7 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Pago Seguro</title>
-  <script src="https://js.stripe.com/v3/"></script>
+
+  <!-- Preconectar a Stripe antes de que el script lo necesite -->
+  <link rel="preconnect" href="https://js.stripe.com">
+  <link rel="preconnect" href="https://api.stripe.com">
+  <link rel="dns-prefetch" href="https://js.stripe.com">
+  <link rel="dns-prefetch" href="https://api.stripe.com">
+
+  <!-- Cargar Stripe.js lo antes posible -->
+  <script src="https://js.stripe.com/v3/" async></script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -45,6 +54,23 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+
+    /* Skeleton mientras carga */
+    #skeleton { display: block; }
+    .sk-line {
+      background: linear-gradient(90deg, #f0ebff 25%, #e5e0ff 50%, #f0ebff 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s infinite;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    .sk-field { height: 44px; }
+    .sk-btn   { height: 46px; margin-top: 4px; border-radius: 10px; }
+    .sk-half  { height: 44px; width: 48%; display: inline-block; }
+    .sk-row   { display: flex; gap: 10px; margin-bottom: 10px; }
+    .sk-row .sk-half { margin-bottom: 0; flex: 1; }
+
     #payment-element { margin-bottom: 14px; }
     button#submit-btn {
       background: #6c47ff;
@@ -82,7 +108,6 @@
       display: none;
     }
     .lock-icon { font-size: 11px; color: #9ca3af; text-align: center; margin-top: 12px; }
-    #loading { text-align: center; padding: 24px 0; color: #6b7280; font-size: 13px; }
     .spinner {
       display: inline-block;
       width: 16px; height: 16px;
@@ -95,6 +120,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     #form-container { display: none; }
+    #error-screen { display: none; color: #dc2626; font-size: 13px; padding: 20px 0; text-align: center; }
   </style>
 </head>
 <body>
@@ -107,10 +133,17 @@
       </div>
     </div>
 
-    <div id="loading">
-      <span class="spinner"></span> Cargando...
+    <!-- Skeleton visible mientras carga Stripe -->
+    <div id="skeleton">
+      <div class="sk-line sk-field"></div>
+      <div class="sk-row">
+        <div class="sk-line sk-half"></div>
+        <div class="sk-line sk-half"></div>
+      </div>
+      <div class="sk-line sk-btn"></div>
     </div>
 
+    <!-- Formulario real -->
     <div id="form-container">
       <div id="payment-element"></div>
       <button id="submit-btn">Pagar ahora</button>
@@ -118,80 +151,96 @@
       <div id="success-message">&#9989; &#161;Pago exitoso! Gracias por tu compra.</div>
       <p class="lock-icon">&#128274; Procesado con Stripe. Tus datos estan seguros.</p>
     </div>
+
+    <div id="error-screen">&#9888; Error al cargar. Vuelve a intentarlo.</div>
   </div>
 
   <script>
     const STRIPE_PK = 'pk_test_51LLPZSAyqyVgaUlbXbj2SLEI5GSm4ja4tiz7mJB2gUokpRMQOJx2BeUqpTYp5xE5uwXd3PEjDcwjFi0NwME9hRgE005Ajk8wNW';
-    const stripe = Stripe(STRIPE_PK);
 
     const params       = new URLSearchParams(window.location.search);
     const clientSecret = params.get('client_secret');
     const amount       = params.get('amount');
     const currency     = (params.get('currency') || 'usd').toLowerCase();
 
-    // Mostrar monto con la moneda correcta
+    // Mostrar monto y moneda de inmediato
     if (amount) {
       document.getElementById('amount-display').textContent =
         new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() })
           .format(parseInt(amount) / 100);
     }
-
-    // Mostrar badge de moneda
     document.getElementById('currency-badge').textContent = currency.toUpperCase();
 
     if (!clientSecret) {
-      document.getElementById('loading').innerHTML =
-        '&#9888; Error: no se recibio el client_secret. Vuelve a intentarlo.';
+      document.getElementById('skeleton').style.display = 'none';
+      document.getElementById('error-screen').style.display = 'block';
     } else {
-      const elements = stripe.elements({ clientSecret });
-      const paymentElement = elements.create('payment');
+      // Esperar a que Stripe.js cargue (ya viene con async)
+      function initStripe() {
+        if (typeof Stripe === 'undefined') {
+          setTimeout(initStripe, 100);
+          return;
+        }
 
-      paymentElement.on('ready', () => {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('form-container').style.display = 'block';
-      });
-
-      paymentElement.mount('#payment-element');
-
-      document.getElementById('submit-btn').addEventListener('click', async () => {
-        const btn    = document.getElementById('submit-btn');
-        const errDiv = document.getElementById('error-message');
-
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Procesando...';
-        errDiv.style.display = 'none';
-
-        const { error, paymentIntent } = await stripe.confirmPayment({
-          elements,
-          confirmParams: { return_url: window.location.href },
-          redirect: 'if_required'
+        const stripe   = Stripe(STRIPE_PK);
+        const elements = stripe.elements({ clientSecret });
+        const paymentElement = elements.create('payment', {
+          layout: { type: 'tabs', defaultCollapsed: false }
         });
 
-        if (error) {
-          errDiv.textContent = error.message;
-          errDiv.style.display = 'block';
-          btn.disabled = false;
-          btn.textContent = 'Pagar ahora';
-        } else {
-          document.getElementById('success-message').style.display = 'block';
-          btn.style.display = 'none';
+        paymentElement.on('ready', () => {
+          document.getElementById('skeleton').style.display = 'none';
+          document.getElementById('form-container').style.display = 'block';
+        });
 
-          const msg = {
-            type:            'PAYMENT_SUCCESS',
-            clientSecret,
-            paymentIntentId: paymentIntent?.id ?? null,
-            currency:        currency,
-            amount:          amount ? parseInt(amount) : null,
-            saveCard:        true
-          };
+        paymentElement.on('loaderror', () => {
+          document.getElementById('skeleton').style.display = 'none';
+          document.getElementById('error-screen').style.display = 'block';
+        });
 
-          window.parent.postMessage(msg, '*');
+        paymentElement.mount('#payment-element');
 
-          if (window.flutter_inappwebview) {
-            window.flutter_inappwebview.callHandler('paymentSuccess', msg);
+        document.getElementById('submit-btn').addEventListener('click', async () => {
+          const btn    = document.getElementById('submit-btn');
+          const errDiv = document.getElementById('error-message');
+
+          btn.disabled = true;
+          btn.innerHTML = '<span class="spinner"></span> Procesando...';
+          errDiv.style.display = 'none';
+
+          const { error, paymentIntent } = await stripe.confirmPayment({
+            elements,
+            confirmParams: { return_url: window.location.href },
+            redirect: 'if_required'
+          });
+
+          if (error) {
+            errDiv.textContent = error.message;
+            errDiv.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Pagar ahora';
+          } else {
+            document.getElementById('success-message').style.display = 'block';
+            btn.style.display = 'none';
+
+            const msg = {
+              type:            'PAYMENT_SUCCESS',
+              clientSecret,
+              paymentIntentId: paymentIntent?.id ?? null,
+              currency,
+              amount:          amount ? parseInt(amount) : null,
+              saveCard:        true
+            };
+
+            window.parent.postMessage(msg, '*');
+            if (window.flutter_inappwebview) {
+              window.flutter_inappwebview.callHandler('paymentSuccess', msg);
+            }
           }
-        }
-      });
+        });
+      }
+
+      initStripe();
     }
   </script>
 </body>
