@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Restablecer contraseña — Agora</title>
+<meta name="robots" content="noindex" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ocean-deep: #0F3D3E;
+    --ocean-mid: #1B5A5C;
+    --sand: #F6F1E7;
+    --sand-dim: #EDE5D3;
+    --mango: #E8703A;
+    --mango-dark: #C85A2A;
+    --ink: #12242A;
+    --ink-soft: rgba(18,36,42,0.62);
+    --line: rgba(15,61,62,0.14);
+    --ok: #2E7D5B;
+    --err: #C24534;
+    --radius: 14px;
+    --shadow: 0 20px 50px -20px rgba(15,61,62,0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body{
+    margin:0;
+    font-family:'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--ink);
+    background: var(--sand);
+    -webkit-font-smoothing: antialiased;
+    display:flex;
+    min-height:100vh;
+  }
+
+  /* Coastline signature backdrop */
+  .stage{
+    position:relative;
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 32px 20px;
+    overflow:hidden;
+  }
+  .stage::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      radial-gradient(1200px 500px at 15% -10%, rgba(232,112,58,0.10), transparent 60%),
+      radial-gradient(900px 500px at 100% 100%, rgba(27,90,92,0.10), transparent 55%);
+    pointer-events:none;
+  }
+  .coastline{
+    position:absolute;
+    left:0; right:0; bottom:0;
+    width:100%;
+    height:auto;
+    opacity:0.9;
+    pointer-events:none;
+  }
+
+  .card{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width: 420px;
+    background:#FFFFFF;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 40px 36px 34px;
+    border: 1px solid var(--line);
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom: 28px;
+  }
+  .brand-mark{
+    width:34px; height:34px;
+    border-radius:9px;
+    background: linear-gradient(145deg, var(--ocean-deep), var(--ocean-mid));
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .brand-mark svg{ width:18px; height:18px; }
+  .brand-name{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size: 19px;
+    letter-spacing: 0.01em;
+    color: var(--ocean-deep);
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size: 27px;
+    line-height:1.2;
+    margin: 0 0 8px;
+    color: var(--ink);
+  }
+  .sub{
+    font-size:14.5px;
+    color: var(--ink-soft);
+    line-height:1.5;
+    margin: 0 0 28px;
+  }
+
+  .field{ margin-bottom:18px; }
+  label{
+    display:block;
+    font-size: 12.5px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+    color: var(--ocean-deep);
+    margin-bottom:7px;
+  }
+  .input-wrap{ position:relative; }
+  input[type="password"], input[type="text"]{
+    width:100%;
+    padding: 13px 44px 13px 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--line);
+    background: var(--sand);
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--ink);
+    outline:none;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  input:focus{
+    border-color: var(--ocean-mid);
+    background:#fff;
+  }
+  input.invalid{ border-color: var(--err); }
+
+  .toggle-vis{
+    position:absolute;
+    right:6px; top:50%;
+    transform:translateY(-50%);
+    background:none; border:none; cursor:pointer;
+    width:34px; height:34px;
+    border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    color: var(--ink-soft);
+  }
+  .toggle-vis:hover{ background: rgba(15,61,62,0.06); }
+  .toggle-vis:focus-visible, button:focus-visible, input:focus-visible{
+    outline: 2px solid var(--mango);
+    outline-offset: 2px;
+  }
+
+  .rules{
+    list-style:none;
+    padding:0; margin: 10px 0 0;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 10px;
+  }
+  .rules li{
+    font-size:12.5px;
+    color: var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .rules li .dot{
+    width:6px; height:6px; border-radius:50%;
+    background: var(--line);
+    flex-shrink:0;
+    transition: background .15s ease;
+  }
+  .rules li.met{ color: var(--ok); }
+  .rules li.met .dot{ background: var(--ok); }
+
+  .hint-err{
+    font-size: 12.5px;
+    color: var(--err);
+    margin-top:6px;
+    min-height: 0;
+  }
+
+  button.submit{
+    width:100%;
+    margin-top: 8px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    border:none;
+    background: var(--mango);
+    color:#fff;
+    font-family:inherit;
+    font-weight:700;
+    font-size: 15px;
+    letter-spacing:0.01em;
+    cursor:pointer;
+    transition: background .15s ease, transform .05s ease;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  button.submit:hover:not(:disabled){ background: var(--mango-dark); }
+  button.submit:active:not(:disabled){ transform: translateY(1px); }
+  button.submit:disabled{ opacity:0.6; cursor:not-allowed; }
+
+  .spinner{
+    width:16px; height:16px;
+    border-radius:50%;
+    border: 2px solid rgba(255,255,255,0.4);
+    border-top-color:#fff;
+    animation: spin .7s linear infinite;
+    display:none;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+  .loading .spinner{ display:inline-block; }
+  .loading .btn-label{ opacity:0.9; }
+
+  .banner{
+    display:none;
+    align-items:flex-start;
+    gap:10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    line-height:1.45;
+    margin-bottom: 18px;
+  }
+  .banner.show{ display:flex; }
+  .banner.error{ background: rgba(194,69,52,0.09); color: var(--err); }
+  .banner.icon{ flex-shrink:0; margin-top:1px; }
+
+  /* States */
+  .state{ display:none; }
+  .state.active{ display:block; }
+
+  .success-icon{
+    width:52px; height:52px;
+    border-radius:50%;
+    background: rgba(46,125,91,0.1);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:18px;
+  }
+  .success-icon svg{ color: var(--ok); }
+
+  .fail-icon{
+    width:52px; height:52px;
+    border-radius:50%;
+    background: rgba(194,69,52,0.1);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:18px;
+  }
+  .fail-icon svg{ color: var(--err); }
+
+  .secondary-note{
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top:22px;
+    line-height:1.5;
+    text-align:center;
+  }
+
+  a.app-link{
+    color: var(--ocean-mid);
+    font-weight:600;
+    text-decoration:none;
+  }
+  a.app-link:hover{ text-decoration:underline; }
+
+  @media (max-width: 480px){
+    .card{ padding: 32px 24px 28px; border-radius: 0; box-shadow:none; border:none; min-height:100vh; display:flex; flex-direction:column; justify-content:center;}
+    .stage{ padding:0; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .spinner{ animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <!-- Coastline signature: a quiet line evoking the sea route between the diaspora and Cuba -->
+  <svg class="coastline" viewBox="0 0 1200 160" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,110 C150,80 250,140 400,100 C550,60 650,130 800,95 C950,60 1050,120 1200,90 L1200,160 L0,160 Z"
+      fill="#0F3D3E" opacity="0.05"/>
+    <path d="M0,125 C160,100 260,150 420,115 C580,80 680,140 830,110 C980,80 1080,130 1200,105"
+      fill="none" stroke="#1B5A5C" stroke-width="1.5" opacity="0.18"/>
+  </svg>
+
+  <main class="card">
+
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L3 7v6c0 5.2 3.8 9.7 9 11 5.2-1.3 9-5.8 9-11V7l-9-5z" stroke="#F6F1E7" stroke-width="1.6" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="brand-name">Agora</span>
+    </div>
+
+    <!-- STATE: loading (validating recovery link) -->
+    <section id="state-checking" class="state active">
+      <h1>Verificando el enlace…</h1>
+      <p class="sub">Un momento mientras confirmamos que el enlace es válido.</p>
+    </section>
+
+    <!-- STATE: form -->
+    <section id="state-form" class="state">
+      <h1>Crea una nueva contraseña</h1>
+      <p class="sub">Elige una contraseña segura para tu cuenta de Agora.</p>
+
+      <div id="banner-error" class="banner error">
+        <svg class="icon" width="17" height="17" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 8v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+        <span id="banner-error-text">Algo salió mal.</span>
+      </div>
+
+      <form id="reset-form" novalidate>
+        <div class="field">
+          <label for="password">Nueva contraseña</label>
+          <div class="input-wrap">
+            <input type="password" id="password" name="password" autocomplete="new-password" placeholder="••••••••" required />
+            <button type="button" class="toggle-vis" data-target="password" aria-label="Mostrar contraseña">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+          </div>
+          <ul class="rules">
+            <li id="rule-len"><span class="dot"></span>Mínimo 8 caracteres</li>
+            <li id="rule-case"><span class="dot"></span>Mayúscula y minúscula</li>
+            <li id="rule-num"><span class="dot"></span>Al menos un número</li>
+          </ul>
+        </div>
+
+        <div class="field">
+          <label for="password-confirm">Confirmar contraseña</label>
+          <div class="input-wrap">
+            <input type="password" id="password-confirm" name="password-confirm" autocomplete="new-password" placeholder="••••••••" required />
+            <button type="button" class="toggle-vis" data-target="password-confirm" aria-label="Mostrar contraseña">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/></svg>
+            </button>
+          </div>
+          <div class="hint-err" id="match-error"></div>
+        </div>
+
+        <button type="submit" class="submit" id="submit-btn">
+          <span class="spinner"></span>
+          <span class="btn-label">Guardar nueva contraseña</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- STATE: success -->
+    <section id="state-success" class="state">
+      <div class="success-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1>Contraseña actualizada</h1>
+      <p class="sub">Tu contraseña se cambió correctamente. Ya puedes volver a la app de Agora e iniciar sesión con tu nueva contraseña.</p>
+    </section>
+
+    <!-- STATE: invalid/expired link -->
+    <section id="state-invalid" class="state">
+      <div class="fail-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M9 9l6 6M15 9l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </div>
+      <h1>Este enlace ya no es válido</h1>
+      <p class="sub">Puede haber expirado o haberse usado antes. Vuelve a la app de Agora y solicita un nuevo enlace para restablecer tu contraseña.</p>
+    </section>
+
+    <p class="secondary-note">¿Necesitas ayuda? Contacta a soporte desde la app de Agora.</p>
+  </main>
+</div>
+
+<script type="module">
+  import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+  // ── Configuración ────────────────────────────────────────────────
+  // Reemplaza estos dos valores con los de tu proyecto de Supabase
+  // (Project Settings → API). La anon key es pública y segura de exponer aquí.
+  const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
+  const SUPABASE_ANON_KEY = 'TU-ANON-KEY';
+  // ────────────────────────────────────────────────────────────────
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { detectSessionInUrl: true, persistSession: false }
+  });
+
+  const states = {
+    checking: document.getElementById('state-checking'),
+    form: document.getElementById('state-form'),
+    success: document.getElementById('state-success'),
+    invalid: document.getElementById('state-invalid'),
+  };
+  function showState(name) {
+    Object.values(states).forEach(el => el.classList.remove('active'));
+    states[name].classList.add('active');
+  }
+
+  // Detecta parámetros de error que Supabase agrega si el enlace expiró o ya se usó
+  function urlHasAuthError() {
+    const hash = new URLSearchParams(window.location.hash.replace('#', '?'));
+    const query = new URLSearchParams(window.location.search);
+    return hash.get('error') || query.get('error');
+  }
+
+  let recoveryReady = false;
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      recoveryReady = true;
+      showState('form');
+    }
+  });
+
+  // Fallback: si el evento no llega pero ya existe una sesión válida (algunos flujos PKCE),
+  // o si detectamos un error explícito en la URL.
+  window.addEventListener('load', async () => {
+    if (urlHasAuthError()) {
+      showState('invalid');
+      return;
+    }
+    // da tiempo a que supabase-js procese el token de la URL
+    setTimeout(async () => {
+      if (recoveryReady) return;
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        recoveryReady = true;
+        showState('form');
+      } else {
+        showState('invalid');
+      }
+    }, 1200);
+  });
+
+  // ── Validación de contraseña ──────────────────────────────────────
+  const passwordInput = document.getElementById('password');
+  const confirmInput = document.getElementById('password-confirm');
+  const ruleLen = document.getElementById('rule-len');
+  const ruleCase = document.getElementById('rule-case');
+  const ruleNum = document.getElementById('rule-num');
+  const matchError = document.getElementById('match-error');
+  const submitBtn = document.getElementById('submit-btn');
+  const bannerError = document.getElementById('banner-error');
+  const bannerErrorText = document.getElementById('banner-error-text');
+
+  function checkRules(value) {
+    const lenOk = value.length >= 8;
+    const caseOk = /[a-z]/.test(value) && /[A-Z]/.test(value);
+    const numOk = /[0-9]/.test(value);
+    ruleLen.classList.toggle('met', lenOk);
+    ruleCase.classList.toggle('met', caseOk);
+    ruleNum.classList.toggle('met', numOk);
+    return lenOk && caseOk && numOk;
+  }
+
+  function checkMatch() {
+    if (!confirmInput.value) { matchError.textContent = ''; return true; }
+    const match = passwordInput.value === confirmInput.value;
+    matchError.textContent = match ? '' : 'Las contraseñas no coinciden.';
+    confirmInput.classList.toggle('invalid', !match);
+    return match;
+  }
+
+  passwordInput.addEventListener('input', () => { checkRules(passwordInput.value); checkMatch(); });
+  confirmInput.addEventListener('input', checkMatch);
+
+  document.querySelectorAll('.toggle-vis').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset.target);
+      target.type = target.type === 'password' ? 'text' : 'password';
+    });
+  });
+
+  function hideBanner() { bannerError.classList.remove('show'); }
+  function showBanner(msg) { bannerErrorText.textContent = msg; bannerError.classList.add('show'); }
+
+  document.getElementById('reset-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideBanner();
+
+    const rulesOk = checkRules(passwordInput.value);
+    const matchOk = checkMatch();
+
+    if (!rulesOk) {
+      showBanner('La contraseña no cumple los requisitos mínimos.');
+      return;
+    }
+    if (!matchOk) {
+      showBanner('Las contraseñas no coinciden.');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+
+    const { error } = await supabase.auth.updateUser({ password: passwordInput.value });
+
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('loading');
+
+    if (error) {
+      showBanner(error.message === 'Auth session missing!'
+        ? 'Tu sesión de restablecimiento expiró. Solicita un nuevo enlace desde la app.'
+        : 'No pudimos actualizar tu contraseña. Inténtalo de nuevo.');
+      return;
+    }
+
+    showState('success');
+  });
+</script>
+
+</body>
+</html>
