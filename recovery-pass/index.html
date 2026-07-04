@@ -386,8 +386,10 @@
   const SUPABASE_ANON_KEY = 'TU-ANON-KEY';
   // ────────────────────────────────────────────────────────────────
 
+  // detectSessionInUrl:false porque leemos y consumimos el hash nosotros mismos,
+  // de forma explícita, para poder ver el error real si el enlace falla.
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { detectSessionInUrl: true, persistSession: false }
+    auth: { detectSessionInUrl: false, persistSession: true }
   });
 
   const states = {
@@ -401,41 +403,58 @@
     states[name].classList.add('active');
   }
 
-  // Detecta parámetros de error que Supabase agrega si el enlace expiró o ya se usó
-  function urlHasAuthError() {
-    const hash = new URLSearchParams(window.location.hash.replace('#', '?'));
-    const query = new URLSearchParams(window.location.search);
-    return hash.get('error') || query.get('error');
+  function getHashParams() {
+    const raw = window.location.hash.startsWith('#')
+      ? window.location.hash.substring(1)
+      : window.location.hash;
+    return new URLSearchParams(raw);
   }
 
-  let recoveryReady = false;
+  async function init() {
+    const hashParams = getHashParams();
+    const queryParams = new URLSearchParams(window.location.search);
 
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY') {
-      recoveryReady = true;
-      showState('form');
-    }
-  });
-
-  // Fallback: si el evento no llega pero ya existe una sesión válida (algunos flujos PKCE),
-  // o si detectamos un error explícito en la URL.
-  window.addEventListener('load', async () => {
-    if (urlHasAuthError()) {
+    const errorDescription = hashParams.get('error_description') || queryParams.get('error_description');
+    if (errorDescription) {
+      console.error('Supabase auth error:', decodeURIComponent(errorDescription));
       showState('invalid');
       return;
     }
-    // da tiempo a que supabase-js procese el token de la URL
-    setTimeout(async () => {
-      if (recoveryReady) return;
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        recoveryReady = true;
+
+    const accessToken = hashParams.get('access_token');
+    const refreshToken = hashParams.get('refresh_token');
+    const type = hashParams.get('type');
+    const code = queryParams.get('code'); // por si el proyecto usa flujo PKCE en vez de implícito
+
+    try {
+      if (accessToken && refreshToken && type === 'recovery') {
+        const { error } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (error) throw error;
+        history.replaceState(null, '', window.location.pathname); // limpia el token de la URL
         showState('form');
-      } else {
-        showState('invalid');
+        return;
       }
-    }, 1200);
-  });
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) throw error;
+        history.replaceState(null, '', window.location.pathname);
+        showState('form');
+        return;
+      }
+
+      // No hay token ni code: enlace mal formado o ya limpiado
+      showState('invalid');
+    } catch (err) {
+      console.error('No se pudo validar el enlace de recuperación:', err);
+      showState('invalid');
+    }
+  }
+
+  window.addEventListener('load', init);
 
   // ── Validación de contraseña ──────────────────────────────────────
   const passwordInput = document.getElementById('password');
